@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import streamlit.components.v1 as components
 
-# Hebrew books list (you can extend as needed)
+# Hebrew books list
 books = [
     "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
     "Joshua", "Judges", "Samuel I", "Samuel II", "Kings I", "Kings II"
@@ -33,13 +34,26 @@ if st.button("Flip Hebrew"):
                 hebrew_text = hebrew_text[0] if hebrew_text else ""
             hebrew_text = hebrew_text.replace("\u200e", "").strip()
             flipped_text = flip_hebrew(hebrew_text)
+
             st.subheader(f"Flipped Hebrew: {book} {chapter}:{verse}")
-            st.text(flipped_text)
+            
+            # Display flipped text with Henri Regular font
+            custom_font_html = f"""
+            <link href="https://fonts.googleapis.com/css2?family=Henri&display=swap" rel="stylesheet">
+            <div style="font-family: 'Henri', sans-serif; font-size: 24px; direction: rtl;">
+                {flipped_text}
+            </div>
+            """
+            st.markdown(custom_font_html, unsafe_allow_html=True)
 
             # Copy button
-            st.download_button(
-                label="Copy Text",
-                data=flipped_text,
-                file_name=f"{book}_{chapter}_{verse}_flipped.txt",
-                mime="text/plain"
-            )
+            copy_button_code = f"""
+            <script>
+            function copyText() {{
+                navigator.clipboard.writeText(`{flipped_text}`);
+                alert("Copied to clipboard!");
+            }}
+            </script>
+            <button onclick="copyText()">Copy Text</button>
+            """
+            components.html(copy_button_code, height=60)
