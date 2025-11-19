@@ -8,23 +8,16 @@ def flip_hebrew(text):
 # Streamlit UI
 st.title("Hebrew Flip App")
 
-book = st.text_input("Book (e.g., Genesis)")
+book = st.text_input("Book (e.g., Numbers)")
 chapter = st.text_input("Chapter number")
-start_verse = st.text_input("Start verse (leave empty for full chapter)")
-end_verse = st.text_input("End verse (leave empty if single verse or full chapter)")
+verse = st.text_input("Verse number")  # only single verse
 
 if st.button("Flip Hebrew"):
-    if not book or not chapter:
-        st.warning("Please enter book and chapter.")
+    if not book or not chapter or not verse:
+        st.warning("Please enter book, chapter, and verse.")
     else:
-        # Build API URL
-        if start_verse:
-            if end_verse:
-                url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{start_verse}-{end_verse}?lang=he"
-            else:
-                url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{start_verse}?lang=he"
-        else:
-            url = f"https://www.sefaria.org/api/texts/{book}.{chapter}?lang=he"
+        # Build API URL for single verse
+        url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{verse}?lang=he"
 
         # Fetch data
         response = requests.get(url)
@@ -33,9 +26,11 @@ if st.button("Flip Hebrew"):
         else:
             data = response.json()
             hebrew_texts = data.get("he", [])
-            if isinstance(hebrew_texts, str):
-                hebrew_texts = [hebrew_texts]  # single verse
 
-            st.subheader("Flipped Hebrew")
-            for i, verse in enumerate(hebrew_texts, start=int(start_verse) if start_verse else 1):
-                st.text(f"{i}: {flip_hebrew(verse)}")
+            # Ensure it’s a list
+            if isinstance(hebrew_texts, str):
+                hebrew_texts = [hebrew_texts]
+
+            st.subheader(f"Flipped Hebrew: {book} {chapter}:{verse}")
+            for v in hebrew_texts:
+                st.text(flip_hebrew(v))
