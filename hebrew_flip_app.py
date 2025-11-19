@@ -1,48 +1,41 @@
 import streamlit as st
-
-# Hebrew text database (example, expand as needed)
-hebrew_texts = {
-    "Numbers": {
-        30: {
-            2: "וַיְדַבֵּר מֹשֶׁה אֶל-רָאשֵׁי הַמַּטּוֹת, לִבְנֵי יִשְׂרָאֵל לֵאמֹר: זֶה הַדָּבָר, אֲשֶׁר צִוָּה יְהוָה.",
-            3: "וְכִי יִשָּׂא אִישׁ אִשָּׁה..."
-            # add more verses as needed
-        }
-    }
-}
+import requests
 
 # Function to flip Hebrew text
 def flip_hebrew(text):
     return text[::-1]
 
 # Streamlit UI
-st.title("Hebrew Text Flipper")
+st.title("Hebrew Flip App")
 
-# Book selection
-book = st.selectbox("Select Book", list(hebrew_texts.keys()))
+book = st.text_input("Book (e.g., Genesis)")
+chapter = st.text_input("Chapter number")
+start_verse = st.text_input("Start verse (leave empty for full chapter)")
+end_verse = st.text_input("End verse (leave empty if single verse or full chapter)")
 
-# Chapter selection
-chapter = st.number_input("Chapter number", min_value=1, step=1)
-
-# Verse range selection
-start_verse = st.number_input("Start verse", min_value=1, step=1)
-end_verse = st.number_input("End verse (leave same as start for single verse)", min_value=start_verse, step=1)
-
-# Flip button
 if st.button("Flip Hebrew"):
-    if book not in hebrew_texts:
-        st.error("Book not found in local database.")
-    elif chapter not in hebrew_texts[book]:
-        st.error("Chapter not found in local database.")
+    if not book or not chapter:
+        st.warning("Please enter book and chapter.")
     else:
-        output = []
-        for verse in range(start_verse, end_verse + 1):
-            if verse in hebrew_texts[book][chapter]:
-                flipped = flip_hebrew(hebrew_texts[book][chapter][verse])
-                output.append(f"{verse}: {flipped}")
+        # Build API URL
+        if start_verse:
+            if end_verse:
+                url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{start_verse}-{end_verse}?lang=he"
             else:
-                output.append(f"{verse}: Verse not found")
+                url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{start_verse}?lang=he"
+        else:
+            url = f"https://www.sefaria.org/api/texts/{book}.{chapter}?lang=he"
 
-        st.subheader("Flipped Hebrew:")
-        for line in output:
-            st.text(line)
+        # Fetch data
+        response = requests.get(url)
+        if response.status_code != 200:
+            st.error("Error fetching text from Sefaria.")
+        else:
+            data = response.json()
+            hebrew_texts = data.get("he", [])
+            if isinstance(hebrew_texts, str):
+                hebrew_texts = [hebrew_texts]  # single verse
+
+            st.subheader("Flipped Hebrew")
+            for i, verse in enumerate(hebrew_texts, start=int(start_verse) if start_verse else 1):
+                st.text(f"{i}: {flip_hebrew(verse)}")
