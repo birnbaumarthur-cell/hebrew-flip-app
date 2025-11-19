@@ -1,32 +1,48 @@
 import streamlit as st
 
-def flip_hebrew_text(text):
-    """
-    Flips Hebrew text for display purposes.
-    """
-    lines = text.split('\n')
-    flipped_lines = [''.join(reversed(line)) for line in lines]
-    return '\n'.join(flipped_lines)
+# Hebrew text database (example, expand as needed)
+hebrew_texts = {
+    "Numbers": {
+        30: {
+            2: "וַיְדַבֵּר מֹשֶׁה אֶל-רָאשֵׁי הַמַּטּוֹת, לִבְנֵי יִשְׂרָאֵל לֵאמֹר: זֶה הַדָּבָר, אֲשֶׁר צִוָּה יְהוָה.",
+            3: "וְכִי יִשָּׂא אִישׁ אִשָּׁה..."
+            # add more verses as needed
+        }
+    }
+}
 
-st.set_page_config(page_title="Hebrew Flipper", layout="wide")
+# Function to flip Hebrew text
+def flip_hebrew(text):
+    return text[::-1]
+
+# Streamlit UI
 st.title("Hebrew Text Flipper")
 
-# Input section
-book = st.text_input("Book (e.g., Numbers)", "Numbers")
-chapter = st.text_input("Chapter number", "30")
-start_verse = st.text_input("Start verse", "2")
-end_verse = st.text_input("End verse (leave empty for single verse)", "")
+# Book selection
+book = st.selectbox("Select Book", list(hebrew_texts.keys()))
 
-# Input Hebrew text
-st.info("Paste Hebrew text for the selected range here:")
-hebrew_input = st.text_area("Hebrew Text", height=300)
+# Chapter selection
+chapter = st.number_input("Chapter number", min_value=1, step=1)
+
+# Verse range selection
+start_verse = st.number_input("Start verse", min_value=1, step=1)
+end_verse = st.number_input("End verse (leave same as start for single verse)", min_value=start_verse, step=1)
 
 # Flip button
 if st.button("Flip Hebrew"):
-    if not hebrew_input.strip():
-        st.error("Please paste the Hebrew text to flip.")
+    if book not in hebrew_texts:
+        st.error("Book not found in local database.")
+    elif chapter not in hebrew_texts[book]:
+        st.error("Chapter not found in local database.")
     else:
-        flipped = flip_hebrew_text(hebrew_input)
-        st.subheader(f"Flipped Hebrew Text ({book} {chapter}:{start_verse}" +
-                     (f"-{end_verse}" if end_verse else "") + ")")
-        st.text_area("Flipped Hebrew", flipped, height=300)
+        output = []
+        for verse in range(start_verse, end_verse + 1):
+            if verse in hebrew_texts[book][chapter]:
+                flipped = flip_hebrew(hebrew_texts[book][chapter][verse])
+                output.append(f"{verse}: {flipped}")
+            else:
+                output.append(f"{verse}: Verse not found")
+
+        st.subheader("Flipped Hebrew:")
+        for line in output:
+            st.text(line)
