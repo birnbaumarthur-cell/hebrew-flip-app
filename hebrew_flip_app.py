@@ -1,52 +1,78 @@
 import streamlit as st
+import requests
 
-# Include fonts
+# --------------------------
+#  Hebrew Font + Styling
+# --------------------------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre&display=swap');
-@font-face {
-    font-family: 'Henri';
-    src: url('path_to_your_henri_regular.woff2') format('woff2');
-}
 .hebrew {
     font-family: 'Frank Ruhl Libre', serif;
-    font-size: 20px;
+    font-size: 22px;
     direction: rtl;
-}
-.latin {
-    font-family: 'Henri', sans-serif;
+    background-color: #f5f5f5;
+    padding: 12px;
+    border-radius: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Example Hebrew database
-hebrew_texts = {
-    "Genesis": {
-        1: {
-            1: "בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ",
-            2: "וְהָאָרֶץ הָיְתָה תֹהוּ וָבֹהוּ..."
-        }
-    },
-    "Exodus": {
-        1: {1: "וְאֵלֶּה שִׁמְעוֹן..."}
-    }
-}
+# --------------------------
+# Book Categories
+# --------------------------
+torah = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"
+]
 
-# Sidebar selections
-book = st.selectbox("Select Book", list(hebrew_texts.keys()))
-chapter = st.number_input("Chapter number", min_value=1, step=1)
-verse = st.number_input("Verse number", min_value=1, step=1)
+prophets = [
+    "Joshua", "Judges", "Samuel I", "Samuel II",
+    "Kings I", "Kings II", "Isaiah", "Jeremiah", "Ezekiel",
+    "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah",
+    "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"
+]
 
-# Fetch verse safely
-verse_text = hebrew_texts.get(book, {}).get(chapter, {}).get(verse, "Verse not found")
+writings = [
+    "Psalms", "Proverbs", "Job", "Song of Songs", "Ruth",
+    "Lamentations", "Ecclesiastes", "Esther", "Daniel",
+    "Ezra", "Nehemiah", "Chronicles I", "Chronicles II"
+]
 
-# Display Hebrew with proper font
-st.markdown(f"<div class='hebrew'>{verse_text}</div>", unsafe_allow_html=True)
+# --------------------------
+# UI Layout
+# --------------------------
+st.title("Hebrew Text Fetcher (Sefaria)")
 
-# Download button
-st.download_button(
-    label="Download Hebrew Verse",
-    data=verse_text,
-    file_name=f"{book}_{chapter}_{verse}.txt",
-    mime="text/plain"
-)
+category = st.selectbox("Category:", ["Torah", "Prophets", "Writings"])
+
+if category == "Torah":
+    book = st.selectbox("Book:", torah)
+elif category == "Prophets":
+    book = st.selectbox("Book:", prophets)
+else:
+    book = st.selectbox("Book:", writings)
+
+chapter = st.number_input("Chapter", step=1, min_value=1)
+verse = st.number_input("Verse", step=1, min_value=1)
+
+# --------------------------
+# Fetch Text from Sefaria
+# --------------------------
+url = f"https://www.sefaria.org/api/texts/{book}.{chapter}.{verse}?lang=he&commentary=0&wrap=0"
+
+try:
+    r = requests.get(url)
+    data = r.json()
+    hebrew = data.get("he", "Verse not found")
+except:
+    hebrew = "Error fetching verse"
+
+# --------------------------
+# Display Hebrew
+# --------------------------
+st.markdown(f"<div class='hebrew'>{hebrew}</div>", unsafe_allow_html=True)
+
+# --------------------------
+# Copy Button
+# --------------------------
+st.code(hebrew, language=None)
